@@ -1,5 +1,5 @@
 """
-
+Simulating mechanical fatigue of NB bonds.
 The probability of each bond breaking is p1 and can change during the simulation.
 The bonds are in a column with the force perpendicular to the column.
 All bonds breaking would be a full rapture.
