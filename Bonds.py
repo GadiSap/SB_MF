@@ -13,14 +13,13 @@ class bonds:
         the corresponding probabilities.
 
         Args:
-        NB (int): number of bonds.
-        p1 (float): initial probability of a bond breaking.
-        F_const (float): A constant to calculate the probability change when using 'p_increase' or 'gradiant'.
+        NB (int): Number of bonds.
+        p1 (float): Initial probability of a bond breaking.
+        F_const (float): A constant to calculate the probability change when using 'p_increase'.
         model (str): The type of model to run:
         1) 'p_const '- The force on each bond is constant throughout the simulation even after a bond breaks.
         2) 'p_increase' - The force on a bond increases after a bond breaks F/not_broken_bonds.
-        3) 'gradiant' - The force is higher at the top bond and decreases further down (like bending).
-        4) 'zipper'- The bonds break one by one with all the force on one bond (like a zipper).
+        3) 'zipper'- The bonds break one by one with all the force on one bond (like a zipper).
         rebind_on (boolean): If True the bonds can rebind after breaking.
         Rebind_P1 (float): The probability of a bond to rebind.
 
@@ -40,14 +39,10 @@ class bonds:
         self.rebind_ps = np.zeros(shape=(self.NB))  # Vector with the probability of rebinding for each bond
 
         #Seting up the initial probability vector for each model type
-        if self.MODEL == 'gradiant':
-            self.p_start_gradiant()
-        elif self.MODEL == 'zipper':
+        if self.MODEL == 'zipper':
             self.p_start_zipper()
         else:
             self.p_start_same()
-
-
 
 
 
@@ -86,9 +81,6 @@ class bonds:
         #Adjstes the probability vector ps with the new probabilities for each bond after a bond breaks.
         if self.not_broken == 0:
             self.ps[:] = 0
-        elif self.MODEL == 'gradiant':
-            # Need to change to better fit real world force types
-            self.p_gradiant ()
         elif self.MODEL == 'p_increase':
             self.cal_p_increase()
         elif self.MODEL == 'zipper':
@@ -102,28 +94,12 @@ class bonds:
         #sets the vector ps with all probabilities the same
         self.ps = np.repeat(self.p1, self.NB)
 
-    def p_start_gradiant (self):
-        # sets the vector ps with probabilities decreasing
-        # Need to change to better fit real world force types
-        self.ps = np.array([])
-        for i in range (len(self.allbonds)):
-            self.ps = np.append(self.ps, self.p1*math.pow(0.95, i))
 
     def p_start_zipper(self):
         # sets the vector ps with probabilities of breaking only for the first bond
         self.ps = np.zeros(shape=(self.NB))
         self.ps[0] = self.p1
 
-
-    def p_gradiant (self):
-        """
-        Changes the vector ps after a bond breaks with the probabilities decreasing
-         """
-        # Need to change to better fit real world force types
-        newp1 = self.p1 * math.exp(self.F_const * (1 / float(self.not_broken) - 1 / float(self.NB)))
-        for i in range (len(self.allbonds)):
-            self.ps[i] = newp1*math.pow(0.95, i)
-        self.ps = np.where(self.allbonds == 0, 0, self.ps)
 
 
     def rebind(self):
@@ -150,16 +126,13 @@ class bonds:
                 did_rebind = True
 
                 if self.MODEL == 'p_increase':
-                    #update self.p1
+                    #Update self.p1
                     self.cal_p_increase()
                     self.ps = np.where(rand_rebind_array < 0, self.p1, self.ps)
-                elif self.MODEL == 'gradiant':
-                    self.p_gradiant(self)
                 else:
                     self.ps = np.where(rand_rebind_array < 0, self.p1, self.ps)
 
         return did_rebind, rebind_bond_location
-
 
 
 
@@ -198,3 +171,37 @@ def add_bonds_to_dic(dic_bonds, n, broken, new_changes):
 
     return (dic_bonds)
 
+
+def plot_hist (n_s, bins, p1_start):
+    """
+        This function will plot a histogram
+
+       Args:
+            n_s (int): Cycle number
+            bins (int): The number bins
+            p1_start (float): The probability of the bond breaking
+
+        """
+    plt.hist(n_s, bins = bins)
+    plt.title(f'Histogram for p = {p1_start}')
+    plt.xlabel('n')
+    plt.ylabel('Counts')
+    plt.show()
+
+
+
+def plot_p_n (df_p_n):
+    """
+        This function will plot a probability (p)
+        vs the median of the number of cycles for all bonds to break (n)
+        on a log log scale
+
+       Args:
+            df_p_n (pandas df)
+
+        """
+    plt.loglog(df_p_n['Median'], df_p_n['P'], 'o')
+    plt.title('P vs N')
+    plt.xlabel('n')
+    plt.ylabel('p')
+    plt.show()
